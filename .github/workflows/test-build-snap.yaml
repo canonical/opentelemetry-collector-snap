@@ -21,7 +21,7 @@ jobs:
         confinement: [ "strict"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # snapcraft remote-build requires a full clone
           fetch-depth: 0

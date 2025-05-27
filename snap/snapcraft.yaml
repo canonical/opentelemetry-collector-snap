@@ -1,13 +1,11 @@
 name: opentelemetry-collector
-version: '0.119.0'
+version: '0.127.0'
 summary: Vendor-agnostic way to receive, process and export telemetry data.
 description: |
   Designed to collect, process, and export telemetry data such as metrics, logs,
   and traces from various sources to multiple destinations.
-
 contact: jose.masson@canonical.com
 base: core24
-
 platforms:
   amd64:
     build-on: [amd64]
@@ -15,20 +13,16 @@ platforms:
   arm64:
     build-on: [arm64]
     build-for: [arm64]
-
 # confinement: devmode # use 'strict' once you have the right plugs and slots
 confinement: strict # use 'strict' once you have the right plugs and slots
-
 plugs:
   etc-otelcol-config:
     interface: system-files
     read:
       - /etc/otelcol/config.yaml
-
   logs:
     interface: content
     target: $SNAP/shared-logs
-
   proc-sys-kernel-random:
     interface: system-files
     read:
@@ -61,7 +55,6 @@ apps:
       # without this, we may face this issue while reading logs in /var/log
       # https://bugs.launchpad.net/snapd/+bug/2098780
       - home
-
 parts:
   wrapper:
     plugin: dump
@@ -73,7 +66,7 @@ parts:
     plugin: nil
     source: https://github.com/open-telemetry/opentelemetry-collector-releases
     source-type: git
-    source-tag: v0.119.0
+    source-tag: v0.127.0
     build-snaps:
       - go/1.23/stable
     build-environment:

@@ -1,5 +1,5 @@
 name: opentelemetry-collector
-version: '0.127.0'
+version: '0.128.0'
 summary: Vendor-agnostic way to receive, process and export telemetry data.
 description: |
   Designed to collect, process, and export telemetry data such as metrics, logs,
@@ -66,7 +66,7 @@ parts:
     plugin: nil
     source: https://github.com/open-telemetry/opentelemetry-collector-releases
     source-type: git
-    source-tag: v0.127.0
+    source-tag: v0.128.0
     build-snaps:
       - go/1.23/stable
     build-environment:

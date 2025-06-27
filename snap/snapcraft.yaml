@@ -62,17 +62,29 @@ parts:
     source-type: local
     override-build: |
       cp local/command-wrapper $CRAFT_PART_INSTALL/
-  opentelemetry-collector:
-    plugin: nil
-    source: https://github.com/open-telemetry/opentelemetry-collector-releases
-    source-type: git
-    source-tag: v0.128.0
+  ocb:
+    plugin: go
+    source: "https://github.com/open-telemetry/opentelemetry-collector.git"
+    source-type: "git"
+    source-tag: "v0.128.0"
+    source-depth: 1
+    source-subdir: "cmd/builder"
     build-snaps:
       - go/1.23/stable
     build-environment:
-      - CGO_ENABLED: 0
+      - CGO_ENABLED: "0"
       - GOOS: linux
+    stage:
+      - bin/builder
+    prime:
+      - "-*"
+  opentelemetry-collector:
+    after:
+      - ocb
+    plugin: dump
+    source: .
     override-build: |
-      make build DISTRIBUTIONS="otelcol"
-      install -D distributions/otelcol/_build/otelcol ${CRAFT_PART_INSTALL}/bin/otelcol
-      install -D distributions/otelcol/config.yaml ${CRAFT_PART_INSTALL}/etc/config.yaml
+      # Create the binary
+      builder --config="${CRAFT_PART_BUILD}/snap/manifest.yaml"
+      install -D ${CRAFT_PART_BUILD}/_build/otelcol ${CRAFT_PART_INSTALL}/bin/otelcol
+      install -D ${CRAFT_PART_BUILD}/snap/config.yaml ${CRAFT_PART_INSTALL}/etc/config.yaml

@@ -21,7 +21,7 @@ all: snap
 
 snap: update-version
 	@echo "Packing OpenTelemetry Collector snap for version $(VERSION)..."
-	@snapcraft pack --debug --verbosity debug
+	@snapcraft pack
 
 
 update-version: generate-manifest

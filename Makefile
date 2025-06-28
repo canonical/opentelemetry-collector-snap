@@ -30,7 +30,7 @@ update-version: generate-manifest
 	  '.version = "$(VERSION)" | .parts.ocb["source-tag"] = "v$(VERSION)"' \
 	  -i snap/snapcraft.yaml
 
-generate-manifest: $(VERSIONS_DIR)/manifest-core.yaml $(VERSIONS_DIR)/manifest-contrib.yaml $(VERSIONS_DIR)/config.yaml
+generate-manifest: $(VERSIONS_DIR)/manifest-core.yaml $(VERSIONS_DIR)/manifest-contrib.yaml
 	@./generate_manifest.sh $(VERSION_TAG) $(VERSIONS_DIR) ./manifest-additions.yaml
 
 # Download base manifests if they don't exist.
@@ -43,12 +43,6 @@ $(VERSIONS_DIR)/manifest-contrib.yaml: prepare-dir
 	@echo "--- Downloading 'contrib' manifest for version $(VERSION_TAG) ---"
 	@wget "$(BASE_MANIFEST_URL)/otelcol-contrib/manifest.yaml" -O $@ --quiet || \
 		(echo "Error: Could not download contrib manifest for $(VERSION_TAG)."; exit 1)
-
-$(VERSIONS_DIR)/config.yaml: prepare-dir
-	@echo "--- Downloading 'core' config file for version $(VERSION_TAG) ---"
-	@wget "$(BASE_MANIFEST_URL)/otelcol/config.yaml" -O $@ --quiet || \
-		(echo "Error: Could not download core config for $(VERSION_TAG)."; exit 1)
-	@cp $@ snap/config.yaml
 
 # Prepares the version directory for a specific version.
 prepare-dir:

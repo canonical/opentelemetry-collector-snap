@@ -20,6 +20,12 @@ plugs:
     interface: system-files
     read:
       - /etc/otelcol/config.yaml
+  otelcol-tls-certs:
+    interface: system-files
+    read:
+      - /usr/local/share/ca-certificates/juju_tls-certificates/otelcol-server.crt
+      - /etc/otelcol/private.key
+      - /usr/local/share/ca-certificates/juju_receive-ca-cert
   logs:
     interface: content
     target: $SNAP/shared-logs

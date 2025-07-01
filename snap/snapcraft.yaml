@@ -92,3 +92,4 @@ parts:
       builder --config="${CRAFT_PART_BUILD}/snap/manifest.yaml"
       install -D -m755 ${CRAFT_PART_BUILD}/_build/otelcol ${CRAFT_PART_INSTALL}/bin/otelcol
       install -D ${CRAFT_PART_BUILD}/snap/config.yaml ${CRAFT_PART_INSTALL}/etc/config.yaml
+    source-tag: v0.128.0

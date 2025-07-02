@@ -1,5 +1,5 @@
 name: opentelemetry-collector
-version: '0.128.0'
+version: '0.129.1'
 summary: Vendor-agnostic way to receive, process and export telemetry data.
 description: |
   Designed to collect, process, and export telemetry data such as metrics, logs,
@@ -92,3 +92,4 @@ parts:
       builder --config="${CRAFT_PART_BUILD}/snap/manifest.yaml"
       install -D -m755 ${CRAFT_PART_BUILD}/_build/otelcol ${CRAFT_PART_INSTALL}/bin/otelcol
       install -D ${CRAFT_PART_BUILD}/snap/config.yaml ${CRAFT_PART_INSTALL}/etc/config.yaml
+    source-tag: v0.129.1

@@ -37,7 +37,7 @@ jobs:
         name: Check for new releases
         shell: bash
         run: |
-          release=$(yq '.parts.opentelemetry-collector["source-tag"]' $GITHUB_WORKSPACE/main/snap/snapcraft.yaml)
+          release=$(yq '.version' $GITHUB_WORKSPACE/main/snap/snapcraft.yaml)
           if [ "${release}" != "${{steps.latest-release.outputs.release}}" ]; then
             echo "release=${{steps.latest-release.outputs.release}}" >> $GITHUB_OUTPUT
             echo "New upstream release ${{steps.latest-release.outputs.release}} found"
@@ -49,9 +49,9 @@ jobs:
         if: ${{ steps.check.outputs.release != '' }}
         shell: bash
         run: |
-          source_tag="${{ steps.check.outputs.release }}" \
-          version=${source_tag#"v"} \
-          yq -i '.version = strenv(version) | .parts.opentelemetry-collector["source-tag"] = strenv(source_tag)' $GITHUB_WORKSPACE/main/snap/snapcraft.yaml
+          current_release=$(yq '.version' $GITHUB_WORKSPACE/main/snap/snapcraft.yaml)
+          latest_release="${{ steps.check.outputs.release }}" \
+          sed -i "s/${current_release}/${latest_release}/g" $GITHUB_WORKSPACE/main/snap/snapcraft.yaml
 
       - name: Import and configure the GPG key for Noctua
         uses: crazy-max/ghaction-import-gpg@v6

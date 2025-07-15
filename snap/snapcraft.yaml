@@ -1,5 +1,5 @@
 name: opentelemetry-collector
-version: '0.128.0'
+version: '0.129.0'
 summary: Vendor-agnostic way to receive, process and export telemetry data.
 description: |
   Designed to collect, process, and export telemetry data such as metrics, logs,
@@ -66,7 +66,7 @@ parts:
     plugin: go
     source: "https://github.com/open-telemetry/opentelemetry-collector.git"
     source-type: "git"
-    source-tag: "v0.128.0"
+    source-tag: "v0.129.0"
     source-depth: 1
     source-subdir: "cmd/builder"
     build-snaps:
@@ -87,8 +87,8 @@ parts:
       - wget
     override-build: |
       # Create the binary
-      wget https://raw.githubusercontent.com/canonical/opentelemetry-collector-rock/refs/heads/main/0.128.0/config.yaml -O ${CRAFT_PART_BUILD}/snap/config.yaml
-      wget https://raw.githubusercontent.com/canonical/opentelemetry-collector-rock/refs/heads/main/0.128.0/manifest.yaml -O ${CRAFT_PART_BUILD}/snap/manifest.yaml
+      wget https://raw.githubusercontent.com/canonical/opentelemetry-collector-rock/refs/heads/main/0.129.0/config.yaml -O ${CRAFT_PART_BUILD}/snap/config.yaml
+      wget https://raw.githubusercontent.com/canonical/opentelemetry-collector-rock/refs/heads/main/0.129.0/manifest.yaml -O ${CRAFT_PART_BUILD}/snap/manifest.yaml
       builder --config="${CRAFT_PART_BUILD}/snap/manifest.yaml"
       install -D -m755 ${CRAFT_PART_BUILD}/_build/otelcol ${CRAFT_PART_INSTALL}/bin/otelcol
       install -D ${CRAFT_PART_BUILD}/snap/config.yaml ${CRAFT_PART_INSTALL}/etc/config.yaml

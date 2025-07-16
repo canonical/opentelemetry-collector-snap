@@ -50,7 +50,14 @@ jobs:
         shell: bash
         run: |
           current_release=$(yq '.version' $GITHUB_WORKSPACE/main/snap/snapcraft.yaml)
-          version="${latest_release#v}" \
+          echo "Current release:" $current_release
+          
+          latest_release="${{ steps.check.outputs.release }}"
+          echo "Latest release:" $latest_release
+          
+          version="${latest_release#v}"
+          echo "Replacing $current_release -> $version in snapcraft.yaml" 
+          
           sed -i "s/${current_release}/${version}/g" $GITHUB_WORKSPACE/main/snap/snapcraft.yaml
 
       - name: Import and configure the GPG key for Noctua

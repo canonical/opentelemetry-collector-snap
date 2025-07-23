@@ -16,15 +16,23 @@ fi
 
 launch_strict() {
   CONFIG_FILE="$SNAP/etc/config.yaml"
+  CONFIG_FOLDER="/etc/otelcol/config.d"
 
-  if snapctl is-connected etc-otelcol-config && [ -r "$HOST_CONFIG_FILE" ]; then
+  # If the snap can access $CONFIG_FOLDER and there is at least one file inside
+  if snapctl is-connected etc-otelcol-config-folder && [ -r "$CONFIG_FOLDER/*" ]; then
+    log "Launching with multiple config files from $CONFIG_FOLDER"
+    CONFIG_ARG=""
+    for file in $CONFIG_FOLDER/*; then
+      CONFIG_ARG="${CONFIG_ARG} --config ${file}"
+    end
+  elif snapctl is-connected etc-otelcol-config && [ -r "$HOST_CONFIG_FILE" ]; then
     log "Launching with config from the host filesystem"
-    CONFIG_FILE="$HOST_CONFIG_FILE"
+    CONFIG_ARG="--config $HOST_CONFIG_FILE"
   else
     log "Launching with minimal default config from the snap"
   fi
 
-  exec "$SNAP/bin/otelcol" --config "$CONFIG_FILE" $REPORTING_ARG
+  exec "$SNAP/bin/otelcol" "$CONFIG_ARG" $REPORTING_ARG
 }
 
 launch_strict

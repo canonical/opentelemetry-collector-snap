@@ -6,7 +6,7 @@ MAX_RETRIES=24
 INTERVAL=5
 COUNT=0
 OTEL_DIR="/etc/otelcol"
-OTEL_CONFIG="${OTEL_DIR}/config.yaml"
+OTEL_CONFIG="${OTEL_DIR}/config.d/config.yaml"
 PROMETHEUS_CONFIG="tests/integration/prometheus_config.yaml"
 ENDPOINT="localhost:9090/api/v1/query"
 QUERY='query=count({__name__="node_cpu_seconds_total"})'

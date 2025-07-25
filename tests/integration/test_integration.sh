@@ -21,7 +21,7 @@ setup() {
     sudo snap install snapcraft --classic --stable
     snapcraft pack
     sudo snap install ./*.snap --dangerous
-    sudo mkdir -p /etc/otelcol
+    sudo mkdir -p /etc/otelcol/config.d
     sudo cp tests/integration/otel_config.yaml "${OTEL_CONFIG}"
 
     /tmp/prometheus --web.enable-remote-write-receiver --config.file "${PROMETHEUS_CONFIG}" --storage.tsdb.path=/tmp &

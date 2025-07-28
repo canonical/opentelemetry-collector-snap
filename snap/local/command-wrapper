@@ -1,30 +1,28 @@
 #!/bin/sh
 
-HOST_CONFIG_FILE="/etc/otelcol/config.yaml"
-
 log() {
   echo "$1" | systemd-cat
 }
 
-REPORTING_ARG=""
-if [ "$(snapctl get reporting-enabled)" = "0" ]; then
-  log "Launching with reporting disabled"
-  REPORTING_ARG="-disable-reporting"
-else
-  log "Launching with reporting enabled"
-fi
-
 launch_strict() {
-  CONFIG_FILE="$SNAP/etc/config.yaml"
+  DEFAULT_CONFIG_FILE="$SNAP/etc/config.yaml"
+  CONFIG_FOLDER="/etc/otelcol/config.d"
 
-  if snapctl is-connected etc-otelcol-config && [ -r "$HOST_CONFIG_FILE" ]; then
-    log "Launching with config from the host filesystem"
-    CONFIG_FILE="$HOST_CONFIG_FILE"
-  else
-    log "Launching with minimal default config from the snap"
+  # If the snap can access $CONFIG_FOLDER and there is at least one file inside
+  if snapctl is-connected etc-otelcol-config; then
+    CONFIG_FILES="$(find $CONFIG_FOLDER -type f -size +0c -print)"
+    if [ -n "$CONFIG_FILES" ]; then
+        log "Launching with config files: $CONFIG_FILES"
+        CONFIG_ARG=""
+        for file in $CONFIG_FILES; do
+            CONFIG_ARG="${CONFIG_ARG} --config ${file}"
+        done
+        exec "$SNAP/bin/otelcol" $CONFIG_ARG
+    fi
   fi
 
-  exec "$SNAP/bin/otelcol" --config "$CONFIG_FILE" $REPORTING_ARG
+  log "Launching with minimal default config from the snap"
+  exec "$SNAP/bin/otelcol" "--config" "$DEFAULT_CONFIG_FILE"
 }
 
 launch_strict

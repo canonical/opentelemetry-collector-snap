@@ -19,7 +19,7 @@ plugs:
   etc-otelcol-config:
     interface: system-files
     read:
-      - /etc/otelcol/config.yaml
+      - /etc/otelcol/config.d
   logs:
     interface: content
     target: $SNAP/shared-logs

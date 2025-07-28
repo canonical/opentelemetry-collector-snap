@@ -6,7 +6,7 @@ MAX_RETRIES=24
 INTERVAL=5
 COUNT=0
 OTEL_DIR="/etc/otelcol"
-OTEL_CONFIG="${OTEL_DIR}/config.yaml"
+OTEL_CONFIG_DIR="${OTEL_DIR}/config.d"
 PROMETHEUS_CONFIG="tests/integration/prometheus_config.yaml"
 ENDPOINT="localhost:9090/api/v1/query"
 QUERY='query=count({__name__="node_cpu_seconds_total"})'
@@ -21,9 +21,9 @@ setup() {
     sudo snap install snapcraft --classic --stable
     snapcraft pack
     sudo snap install ./*.snap --dangerous
-    sudo mkdir -p /etc/otelcol
-    sudo cp tests/integration/otel_config.yaml "${OTEL_CONFIG}"
-
+    sudo mkdir -p /etc/otelcol/config.d
+    sudo cp tests/integration/otel_config.yaml "${OTEL_CONFIG_DIR}/config-01.yaml"
+    sudo cp tests/integration/otel_config.yaml "${OTEL_CONFIG_DIR}/config-02.yaml"
     /tmp/prometheus --web.enable-remote-write-receiver --config.file "${PROMETHEUS_CONFIG}" --storage.tsdb.path=/tmp &
     sudo snap connect opentelemetry-collector:etc-otelcol-config
     sudo snap restart opentelemetry-collector

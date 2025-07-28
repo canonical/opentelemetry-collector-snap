@@ -40,4 +40,6 @@ distributions.</p>
 
 ## Configuration
 
-Once installed, a default configuration file will be created at `/etc/opentelemetry-collector/config.yaml`. Before starting opentelemetry-collector, make sure to update this configuration file to suit you needs, consulting the [official documentation](https://opentelemetry.io/docs/collector/).
+Once installed, a default configuration file will be created at `/snap/opentelemetry-collector/etc/config.yaml`. The snap will try to use all configuration files under the `/etc/otelcol/config.d` folder, in alphabetical order. If none is present, it will use the default config file.
+
+To write a configuration file to suit you needs, consult the [official documentation](https://opentelemetry.io/docs/collector/).

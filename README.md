@@ -48,7 +48,7 @@ To write a configuration file to suit you needs, consult the [official documenta
 ## Enable feature gates
 
 Feature gates can be enabled using the `feature-gates` configuration options with this snap. 
-To specify multiple collectors, use a quoted string with comma-separated values. For example:
+To specify multiple gates, use a quoted string with comma-separated values. For example:
 
 > sudo snap set node-exporter feature-gates=confighttp.framedSnappy
 > sudo snap set node-exporter feature-gates="confighttp.framedSnappy,exporter.kafkaexporter.UseFranzGo"

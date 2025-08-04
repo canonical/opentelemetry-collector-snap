@@ -1,0 +1,18 @@
+#!/bin/sh
+
+FEATURE_GATES="$(snapctl get feature-gates)"
+
+if [ -z "$FEATURE_GATES" ]
+then
+      echo "no feature gates configured"
+      echo -n "" > $SNAP_DATA/feature-gates.conf
+else
+    # Validate the feature-gates using the otelcol validate command
+    if ! $SNAP/bin/otelcol validate  --feature-gates=$FEATURE_GATES --config="$SNAP/etc/config.yaml" > /dev/null 2>&1; then
+        echo "\"$FEATURE_GATES\" is not a valid feature gate definition" >&2
+        exit 1
+    fi
+    FEATURE_GATES="${FEATURE_GATES}"
+    
+    echo -n "$FEATURE_GATES" > $SNAP_DATA/feature-gates.conf
+fi

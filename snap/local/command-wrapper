@@ -7,7 +7,19 @@ log() {
 launch_strict() {
   DEFAULT_CONFIG_FILE="$SNAP/etc/config.yaml"
   CONFIG_FOLDER="/etc/otelcol/config.d"
-
+  FEATURE_GATES_FILE="$SNAP_DATA/feature-gates.conf"
+ 
+  # we parse/enable the feature gates regardless of which config we're loading
+  FEATURE_GATES=$(cat $FEATURE_GATES_FILE)
+  if [ -z "$FEATURE_GATES" ]
+  then
+    log "no feature gates configured"
+    FEATURE_GATES_ARG=""
+  else
+    log "enabling feature gates: $FEATURE_GATES"
+    FEATURE_GATES_ARG="--feature-gates=${FEATURE_GATES}"
+  fi
+  
   # If the snap can access $CONFIG_FOLDER and there is at least one file inside
   if snapctl is-connected etc-otelcol-config; then
     CONFIG_FILES="$(find $CONFIG_FOLDER -type f -size +0c -print)"
@@ -17,12 +29,12 @@ launch_strict() {
         for file in $CONFIG_FILES; do
             CONFIG_ARG="${CONFIG_ARG} --config ${file}"
         done
-        exec "$SNAP/bin/otelcol" $CONFIG_ARG
+        exec "$SNAP/bin/otelcol" $CONFIG_ARG $FEATURE_GATES_ARG
     fi
   fi
 
   log "Launching with minimal default config from the snap"
-  exec "$SNAP/bin/otelcol" "--config" "$DEFAULT_CONFIG_FILE"
+  exec "$SNAP/bin/otelcol" "--config" "$DEFAULT_CONFIG_FILE" "$FEATURE_GATES_ARG"
 }
 
 launch_strict

@@ -6,15 +6,7 @@ description: |
   and traces from various sources to multiple destinations.
 contact: jose.masson@canonical.com
 base: core24
-platforms:
-  amd64:
-    build-on: [amd64]
-    build-for: [amd64]
-  arm64:
-    build-on: [arm64]
-    build-for: [arm64]
-# confinement: devmode # use 'strict' once you have the right plugs and slots
-confinement: strict # use 'strict' once you have the right plugs and slots
+confinement: strict
 plugs:
   etc-otelcol-config:
     interface: system-files

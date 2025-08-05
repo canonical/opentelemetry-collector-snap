@@ -5,30 +5,13 @@ receivers:
         - job_name: "node_exporter"
           static_configs:
             - targets: ["localhost:9100"]
-  otlp:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:4317
-      http:
-        endpoint: 0.0.0.0:4318
 
 exporters:
   prometheusremotewrite:
     endpoint: "http://localhost:9090/api/v1/write"
-  otlp/profiling/0:
-    endpoint: "http://localhost:4040"
-    tls:
-      insecure: true
-      insecure_skip_verify: false
 
 service:
   pipelines:
-    profiles:
-      exporters:
-      - otlp/profiling/0
-      receivers:
-      - otlp
-
     metrics:
       receivers: [prometheus]
       exporters: [prometheusremotewrite]

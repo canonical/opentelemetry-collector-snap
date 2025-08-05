@@ -96,4 +96,9 @@ else
     echo "✅ Profiles pushed to Pyroscope!"
 fi 
 
+# cleanup
+echo "Cleaning up..."
+sudo snap remove --purge opentelemetry-collector
+
 exit $("$prom_fail" + "$pyro_fail")
+

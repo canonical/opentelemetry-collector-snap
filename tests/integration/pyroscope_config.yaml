@@ -1,0 +1,26 @@
+api: {}
+compactor:
+  sharding_ring:
+    kvstore:
+      store: memberlist
+distributor:
+  ring:
+    kvstore:
+      store: memberlist
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: memberlist
+      replication_factor: 1
+memberlist:
+  bind_port: 7946
+  join_members:
+  - localhost:7946
+pyroscopedb:
+  data_path: /tmp/pyroscope-data
+server:
+  http_listen_port: 4040
+store_gateway:
+  sharding_ring:
+    replication_factor: 1

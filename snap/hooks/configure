@@ -15,8 +15,6 @@ else
     FEATURE_GATES="${FEATURE_GATES}"
     
     echo -n "$FEATURE_GATES" > $SNAP_DATA/feature-gates.conf
-#    snapctl restart opentelemetry-collector.opentelemetry-collector # fails with:
-#      error: cannot use "restart" with uid 1000, try with sudo
-#    with sudo: 
-#      error: permission denied.
+    snapctl restart opentelemetry-collector.opentelemetry-collector
+
 fi

@@ -29,7 +29,9 @@ launch_strict() {
         for file in $CONFIG_FILES; do
             CONFIG_ARG="${CONFIG_ARG} --config ${file}"
         done
-        exec "$SNAP/bin/otelcol" "$CONFIG_ARG" "$FEATURE_GATES_ARG"
+        
+         # shellcheck disable=SC2086 # we need to unpack $CONFIG_ARG because it contains spaces 
+        exec "$SNAP/bin/otelcol" $CONFIG_ARG "$FEATURE_GATES_ARG"
     fi
   fi
 

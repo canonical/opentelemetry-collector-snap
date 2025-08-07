@@ -4,17 +4,15 @@ FEATURE_GATES="$(snapctl get feature-gates)"
 
 if [ -z "$FEATURE_GATES" ]
 then
-      echo "no feature gates configured"
-      echo -n "" > $SNAP_DATA/feature-gates.conf
+      echo "no feature gates configured; default flags will be used"
+      touch "$SNAP_DATA"/feature-gates.conf
 else
     # Validate the feature-gates using the otelcol validate command
-    if ! $SNAP/bin/otelcol validate  --feature-gates=$FEATURE_GATES --config="$SNAP/etc/config.yaml" > /dev/null 2>&1; then
+    if ! "$SNAP"/bin/otelcol validate  --feature-gates="$FEATURE_GATES" --config="$SNAP/etc/config.yaml" > /dev/null 2>&1; then
         echo "\"$FEATURE_GATES\" is not a valid feature gate definition" >&2
         exit 1
-    fi
-    FEATURE_GATES="${FEATURE_GATES}"
-    
-    echo -n "$FEATURE_GATES" > $SNAP_DATA/feature-gates.conf
+    fi    
+    printf "%s" "$FEATURE_GATES" > "$SNAP_DATA"/feature-gates.conf
     snapctl restart opentelemetry-collector.opentelemetry-collector
 
 fi

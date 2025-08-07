@@ -10,7 +10,7 @@ launch_strict() {
   FEATURE_GATES_FILE="$SNAP_DATA/feature-gates.conf"
  
   # we parse/enable the feature gates regardless of which config we're loading
-  FEATURE_GATES=$(cat $FEATURE_GATES_FILE)
+  FEATURE_GATES=$(cat "$FEATURE_GATES_FILE")
   if [ -z "$FEATURE_GATES" ]
   then
     log "no feature gates configured"
@@ -29,7 +29,7 @@ launch_strict() {
         for file in $CONFIG_FILES; do
             CONFIG_ARG="${CONFIG_ARG} --config ${file}"
         done
-        exec "$SNAP/bin/otelcol" $CONFIG_ARG $FEATURE_GATES_ARG
+        exec "$SNAP/bin/otelcol" "$CONFIG_ARG" "$FEATURE_GATES_ARG"
     fi
   fi
 

@@ -6,6 +6,9 @@ description: |
   and traces from various sources to multiple destinations.
 contact: jose.masson@canonical.com
 base: core24
+platforms:
+  amd64:
+  arm64:
 confinement: strict
 plugs:
   etc-otelcol-config:

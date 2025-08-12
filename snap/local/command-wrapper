@@ -10,7 +10,12 @@ launch_strict() {
   FEATURE_GATES_FILE="$SNAP_DATA/feature-gates.conf"
  
   # we parse/enable the feature gates regardless of which config we're loading
-  FEATURE_GATES=$(cat "$FEATURE_GATES_FILE")
+  if test -f "$FEATURE_GATES_FILE"; then
+      FEATURE_GATES=$(cat "$FEATURE_GATES_FILE")
+      else
+      FEATURE_GATES=""
+  fi
+
   if [ -z "$FEATURE_GATES" ]
   then
     log "no feature gates configured"

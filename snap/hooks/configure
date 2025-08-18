@@ -12,16 +12,14 @@ get_feature_gates() {
 }
 
 set_feature_gates() {
-  printf "%s" "$1" > "$SNAP_DATA"/feature-gates.conf  
   snapctl set feature-gates="$1"
 }
-
 
 handle_feature_gates() {
     feature_gates="$(get_feature_gates)"
 
     # Validate
-    if ! "$SNAP"/bin/otelcol validate  --feature-gates="$feature_gates" --config="$SNAP/etc/config.yaml" > /dev/null 2>&1; then
+    if ! "$SNAP"/bin/otelcol validate  --feature-gates="$feature_gates" > /dev/null 2>&1; then
         echo "\"$feature_gates\" is not a valid feature gate definition" >&2
         return 1
     fi    

@@ -43,3 +43,19 @@ distributions.</p>
 Once installed, a default configuration file will be created at `/snap/opentelemetry-collector/etc/config.yaml`. The snap will try to use all configuration files under the `/etc/otelcol/config.d` folder, in alphabetical order. If none is present, it will use the default config file.
 
 To write a configuration file to suit you needs, consult the [official documentation](https://opentelemetry.io/docs/collector/).
+
+
+## Enable feature gates
+
+[Feature gates](https://betterstack.com/community/guides/observability/opentelemetry-collector/#understanding-feature-gates) can be enabled using the `feature-gates` configuration options with this snap. 
+To specify multiple gates, use a quoted string with comma-separated values. For example:
+
+> sudo snap set opentelemetry-collector feature-gates=confighttp.framedSnappy
+> sudo snap set opentelemetry-collector feature-gates="confighttp.framedSnappy,exporter.kafkaexporter.UseFranzGo"
+
+To explicitly disable a feature gate, prefix the gate name with a `-` symbol:
+
+> sudo snap set opentelemetry-collector feature-gates="confighttp.framedSnappy,-exporter.kafkaexporter.UseFranzGo"
+
+Reference the prometheus/node_exporter README.md for the list of collectors enabled by default.
+

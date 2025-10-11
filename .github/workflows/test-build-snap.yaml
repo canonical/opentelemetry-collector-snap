@@ -12,16 +12,50 @@ env:
   LAUNCHPAD_TOKEN: ${{ secrets.LAUNCHPAD_TOKEN }}
 
 jobs:
-  build:
-    name: Build snap (${{ matrix.confinement }})
+  local-build:
+    name: Build snap (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ "ubuntu-latest", "Ubuntu_ARM64_4C_16G_03" ]
+        include:
+        - runner: "ubuntu-latest"
+          platform: amd64
+        - runner: "Ubuntu_ARM64_4C_16G_03"
+          platform: arm64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup LXD
+        uses: canonical/setup-lxd@v0.1.1
+        with:
+          channel: latest/stable
+
+      - name: Install dependencies
+        run: |
+          sudo snap install --classic --channel edge snapcraft
+
+      - name: Build Snap
+        run: snapcraft pack
+      
+      - name: Upload snap
+        uses: actions/upload-artifact@v4
+        with:
+          name: otelcol-${{ matrix.platform }}-snap
+          path: "*.snap"
+
+  remote-build:
+    name: Build snap (${{ matrix.build-for }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        confinement: [ "strict"]
+        build-for: [ "ppc64el", "s390x" ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # snapcraft remote-build requires a full clone
           fetch-depth: 0
@@ -40,8 +74,11 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git config --global user.name "Github Actions"
 
-      - name: yq - portable yaml processor
-        uses: mikefarah/yq@v4
-
       - name: Build Snap (remote)
-        run: snapcraft remote-build --launchpad-accept-public-upload
+        run: snapcraft remote-build --build-for=${{ matrix.build-for }} --launchpad-accept-public-upload
+      
+      - name: Upload snap
+        uses: actions/upload-artifact@v4
+        with:
+          name: otelcol-${{ matrix.build-for }}-snap
+          path: "*.snap"

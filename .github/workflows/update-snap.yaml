@@ -23,13 +23,13 @@ jobs:
           sudo snap install yq
 
       - id: latest-release
-        uses: pozetroninc/github-action-get-latest-release@v0.6.0
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
         with:
           repository: open-telemetry/opentelemetry-collector-releases
           excludes: prerelease, draft
 
       - name: Checkout the Snap source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           path: main
 

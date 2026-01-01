@@ -41,7 +41,7 @@ jobs:
         run: snapcraft pack
       
       - name: Upload snap
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: otelcol-${{ matrix.platform }}-snap
           path: "*.snap"
@@ -78,7 +78,7 @@ jobs:
         run: snapcraft remote-build --build-for=${{ matrix.build-for }} --launchpad-accept-public-upload
       
       - name: Upload snap
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: otelcol-${{ matrix.build-for }}-snap
           path: "*.snap"

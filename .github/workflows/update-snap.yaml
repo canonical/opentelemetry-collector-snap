@@ -61,7 +61,7 @@ jobs:
           sed -i "s/${current_release}/${version}/g" $GITHUB_WORKSPACE/main/snap/snapcraft.yaml
 
       - name: Import and configure the GPG key for Noctua
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.NOCTUA_GPG_PRIVATE }}
           passphrase: ${{ secrets.NOCTUA_GPG_PASSPHRASE }}

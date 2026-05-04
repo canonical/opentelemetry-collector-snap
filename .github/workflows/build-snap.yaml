@@ -3,10 +3,6 @@ name: Build Snap
 on:
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
     name: Build snap (${{ matrix.arch }})
@@ -34,8 +30,6 @@ jobs:
           sudo snap install --classic --channel edge snapcraft
           mkdir -p ~/.local/share/snapcraft
           echo -e "$LAUNCHPAD_TOKEN" >> ~/.local/share/snapcraft/launchpad-credentials
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "Github Actions"
 
       - name: Build snap (${{ matrix.arch }})
         run: snapcraft remote-build --build-for=${{ matrix.arch }} --launchpad-accept-public-upload

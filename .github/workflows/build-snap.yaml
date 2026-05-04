@@ -2,6 +2,10 @@ name: Build Snap
 
 on:
   workflow_dispatch:
+  # FIXME: Remove the push trigger below before merging to main. It is only here to test the workflow from the feature branch.
+  push:
+    branches:
+      - feat/ci-build-release
 
 jobs:
   build:

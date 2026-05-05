@@ -1,0 +1,74 @@
+name: Release Snap
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Snap Store track to release to (edge channel)
+        type: choice
+        required: true
+        options:
+          - latest
+          - '0.130'
+      build_run_id:
+        description: Run ID from the "Build Snap" workflow (leave empty to use the latest successful build)
+        type: string
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+
+env:
+  SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
+jobs:
+  release:
+    name: Release snap to ${{ inputs.track }}/edge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: sudo snap install --classic --channel edge snapcraft
+
+      - name: Resolve build run ID
+        id: resolve-build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ inputs.build_run_id }}" ]; then
+            echo "run_id=${{ inputs.build_run_id }}" >> "$GITHUB_OUTPUT"
+            echo "Using provided run ID: ${{ inputs.build_run_id }}"
+          else
+            branch=$([[ "${{ inputs.track }}" == "latest" ]] && echo "main" || echo "${{ inputs.track }}")
+            run_id=$(gh run list \
+              --repo "${{ github.repository }}" \
+              --workflow build-snap.yaml \
+              --branch "$branch" \
+              --status success \
+              --limit 1 \
+              --json databaseId \
+              --jq '.[0].databaseId')
+            if [ -z "$run_id" ]; then
+              echo "No successful build found for branch $branch" >&2
+              exit 1
+            fi
+            echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+            echo "Auto-detected run ID: $run_id (latest successful build on $branch)"
+          fi
+
+      - name: Download snaps from build run
+        uses: actions/download-artifact@v4
+        with:
+          pattern: otelcol-*-snap
+          run-id: ${{ steps.resolve-build.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          merge-multiple: true
+
+      - name: Release snaps to ${{ inputs.track }}/edge
+        run: |
+          for snap in *.snap; do
+            snapcraft upload "$snap" --release "${{ inputs.track }}/edge"
+          done

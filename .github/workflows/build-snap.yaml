@@ -1,0 +1,45 @@
+name: Build Snap
+
+on:
+  workflow_dispatch:
+  # FIXME: Remove the push trigger below before merging to main. It is only here to test the workflow from the feature branch.
+  push:
+    branches:
+      - feat/ci-build-release
+
+jobs:
+  build:
+    name: Build snap (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64, ppc64el, s390x]
+    env:
+      LAUNCHPAD_TOKEN: ${{ secrets.LAUNCHPAD_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          # snapcraft remote-build requires a full clone
+          fetch-depth: 0
+
+      - name: Setup LXD
+        uses: canonical/setup-lxd@v1
+        with:
+          channel: latest/stable
+
+      - name: Install dependencies
+        run: |
+          sudo snap install --classic --channel edge snapcraft
+          mkdir -p ~/.local/share/snapcraft
+          echo -e "$LAUNCHPAD_TOKEN" >> ~/.local/share/snapcraft/launchpad-credentials
+
+      - name: Build snap (${{ matrix.arch }})
+        run: snapcraft remote-build --build-for=${{ matrix.arch }} --launchpad-accept-public-upload
+
+      - name: Upload snap artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: otelcol-${{ matrix.arch }}-snap
+          path: "*.snap"

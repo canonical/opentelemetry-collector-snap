@@ -1,8 +1,9 @@
-[private]
-default:
-    just --list
+set allow-duplicate-recipes
+set allow-duplicate-variables
+import? 'snaps.just'
 
-# Run integration tests for the snap
-[group("test")]
-integration:
-	sh tests/integration/test_integration.sh
+[private]
+@default:
+  just --list
+  echo ""
+  echo "For help with a specific recipe, run: just --usage <recipe>"

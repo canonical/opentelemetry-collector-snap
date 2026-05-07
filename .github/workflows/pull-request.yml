@@ -17,19 +17,14 @@ jobs:
         uses: actions/checkout@v6
       - name: Install dependencies
         run: |
-          # Install just
-          sudo snap install just --classic
-          # Install LXD
+          sudo snap install snapcraft --classic --stable
           sudo snap install lxd
           sudo lxd waitready
           sudo lxd init --minimal
           sudo lxc network set lxdbr0 ipv6.address none
-          # Enable non-root user control
           sudo chmod a+wr /var/snap/lxd/common/lxd/unix.socket
-          lxd_user="$USER"
-          sudo usermod -a -G lxd "$lxd_user"
-          # Ensure that LXD containers can talk to the internet
+          sudo usermod -a -G lxd "$USER"
           sudo iptables -F FORWARD
           sudo iptables -P FORWARD ACCEPT
       - name: Run tests
-        run: just integration
+        run: snapcraft test

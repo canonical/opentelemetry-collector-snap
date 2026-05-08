@@ -5,7 +5,7 @@ backends:
     type: craft
     allocate: "false"
     systems:
-      - ubuntu-26.04:
+      - ubuntu-24.04:
 
 suites:
   tests/spread/integration/:

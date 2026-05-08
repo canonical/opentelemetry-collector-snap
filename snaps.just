@@ -51,7 +51,7 @@ refresh:
   which -s gh || { echo "gh not found"; exit 1; }
   refresh_folder="blueprints/snaps"
   api_path="repos/canonical/observability/contents/$refresh_folder"
-  for file in snaps.just; do
+  for file in snaps.just spread.yaml; do
     echo "Fetching latest '$file' from canonical/observability ..."
     gh api "$api_path/$file" --jq '.content' | base64 --decode > "$file"
     echo "✓ $file updated"

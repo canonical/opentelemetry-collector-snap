@@ -5,7 +5,7 @@ description: |
   Designed to collect, process, and export telemetry data such as metrics, logs,
   and traces from various sources to multiple destinations.
 contact: jose.masson@canonical.com
-base: core24
+base: core26
 platforms:
   amd64:
   arm64:

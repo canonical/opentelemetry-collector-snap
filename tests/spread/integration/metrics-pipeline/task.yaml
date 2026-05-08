@@ -28,10 +28,12 @@ prepare: |
     "${OTEL_CONFIG_DIR}/config-02.yaml"
 
   # Start Prometheus with remote-write receiver enabled
+  # stdout/stderr must be redirected so the spread pipe closes when prepare exits
   /tmp/prometheus \
     --web.enable-remote-write-receiver \
     --config.file "${PROJECT_PATH}/tests/spread/integration/metrics-pipeline/prometheus_config.yaml" \
-    --storage.tsdb.path=/tmp/prometheus-data &
+    --storage.tsdb.path=/tmp/prometheus-data \
+    > /tmp/prometheus.log 2>&1 &
 
   snap restart opentelemetry-collector
 
@@ -64,4 +66,5 @@ restore: |
 
 debug: |
   snap logs opentelemetry-collector -n 50 || true
+  cat /tmp/prometheus.log || true
   journalctl -xe --no-pager | tail -50 || true

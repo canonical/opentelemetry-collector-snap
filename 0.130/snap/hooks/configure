@@ -1,0 +1,31 @@
+#!/bin/sh
+
+get_feature_gates() {
+  value="$(snapctl get feature-gates)"
+  if [ -n "$value" ]; then
+    set_feature_gates "$value"
+  fi
+  echo "$value"
+}
+
+set_feature_gates() {
+  snapctl set feature-gates="$1"
+}
+
+handle_feature_gates() {
+    feature_gates="$(get_feature_gates)"
+    if [ -n "$feature_gates" ]; then
+        # Validate
+        otelcol validate --feature-gates="$feature_gates" 2>&1 | grep --ignore-case --quiet "no such feature gate" 
+        return_code=$?
+        # return code 0 means grep found a matching string
+        if [ $return_code -eq 0 ] ; then
+            echo "\"$feature_gates\" is not a valid feature gate definition" >&2
+            return 1
+        fi    
+    fi
+    set_feature_gates "$feature_gates"
+    snapctl restart opentelemetry-collector.opentelemetry-collector
+}
+
+handle_feature_gates

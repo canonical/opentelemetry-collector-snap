@@ -1,0 +1,24 @@
+name: Update Snap on new releases of its source
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  schedule:
+    - cron: '0 0,4,8,12,16,20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    uses: canonical/observability/.github/workflows/snap-update.yaml@v2
+    with:
+      source-repo: open-telemetry/opentelemetry-collector-releases
+    secrets:
+      OBSERVABILITY_NOCTUA_TOKEN: ${{ secrets.OBSERVABILITY_NOCTUA_TOKEN }}
+      NOCTUA_GPG_PASSPHRASE: ${{ secrets.NOCTUA_GPG_PASSPHRASE }}
+      NOCTUA_GPG_PRIVATE: ${{ secrets.NOCTUA_GPG_PRIVATE }}

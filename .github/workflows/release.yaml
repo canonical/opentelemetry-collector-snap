@@ -1,0 +1,17 @@
+name: Release Snap
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    uses: canonical/observability/.github/workflows/snap-release.yaml@v2
+    secrets:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+      LAUNCHPAD_TOKEN: ${{ secrets.LAUNCHPAD_TOKEN }}

@@ -27,7 +27,7 @@ plugs:
       - /proc/sys/kernel/random/read_wakeup_threshold
       - /proc/sys/kernel/random/poolsize
       - /proc/sys/kernel/random/urandom_min_reseed_secs
-      # Added because of https://github.com/canonical/grafana-agent-operator/issues/23
+      # Added because of: https://github.com/canonical/grafana-agent-operator/issues/23
       - /proc/spl/kstat/zfs
       - /sys/fs/btrfs
       - /proc/sys/kernel/threads-max

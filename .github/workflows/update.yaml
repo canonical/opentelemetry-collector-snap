@@ -1,7 +1,7 @@
 name: Update Snap on new releases of its source
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-snap
   cancel-in-progress: true
 
 on:

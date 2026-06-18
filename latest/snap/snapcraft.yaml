@@ -1,10 +1,15 @@
+title: OpenTelemetry Collector Snap
 name: opentelemetry-collector
 version: '0.152.0'
 summary: Vendor-agnostic way to receive, process and export telemetry data.
+license: Apache-2.0
 description: |
   Designed to collect, process, and export telemetry data such as metrics, logs,
   and traces from various sources to multiple destinations.
 contact: jose.masson@canonical.com
+issues: https://github.com/canonical/opentelemetry-collector-snap/issues
+source-code: https://github.com/canonical/opentelemetry-collector-snap
+website: https://opentelemetry.io/docs/collector/
 base: core24
 platforms:
   amd64:
@@ -12,6 +17,7 @@ platforms:
   ppc64el:
   s390x:
 confinement: strict
+
 plugs:
   etc-otelcol-config:
     interface: system-files
@@ -27,14 +33,13 @@ plugs:
       - /proc/sys/kernel/random/read_wakeup_threshold
       - /proc/sys/kernel/random/poolsize
       - /proc/sys/kernel/random/urandom_min_reseed_secs
-      # Added because of https://github.com/canonical/grafana-agent-operator/issues/23
       - /proc/spl/kstat/zfs
       - /sys/fs/btrfs
       - /proc/sys/kernel/threads-max
+
 apps:
   opentelemetry-collector:
     daemon: simple
-    # command: bin/otelcol --config $SNAP/etc/config.yaml
     command: command-wrapper
     install-mode: disable
     restart-condition: on-failure
@@ -45,13 +50,11 @@ apps:
       - mount-observe
       - network-observe
       - system-observe
-      - log-observe
+      - log-observe           # Required to parse and fetch host journals via journalctl
       - etc-otelcol-config
       - proc-sys-kernel-random
-      # We use home plug since it has the dac_read_search capability enabled.
-      # without this, we may face this issue while reading logs in /var/log
-      # https://bugs.launchpad.net/snapd/+bug/2098780
       - home
+
 parts:
   wrapper:
     plugin: dump
@@ -59,6 +62,7 @@ parts:
     source-type: local
     override-build: |
       cp local/command-wrapper $CRAFT_PART_INSTALL/
+
   ocb:
     plugin: go
     source: "https://github.com/open-telemetry/opentelemetry-collector.git"
@@ -69,12 +73,13 @@ parts:
     build-snaps:
       - go/1.25/candidate
     build-environment:
-      - CGO_ENABLED: "0"
+      - CGO_ENABLED: "1"     # Required for building journald C extensions
       - GOOS: linux
     stage:
       - bin/builder
     prime:
       - "-*"
+
   opentelemetry-collector:
     after:
       - ocb
@@ -82,10 +87,16 @@ parts:
     source: .
     build-packages:
       - wget
+      - libsystemd-dev
+      - build-essential
+      - pkg-config
     override-build: |
-      # Create the binary
+      mkdir -p ${CRAFT_PART_BUILD}/snap
       wget https://raw.githubusercontent.com/canonical/opentelemetry-collector-rock/refs/heads/main/0.152.0/config.yaml -O ${CRAFT_PART_BUILD}/snap/config.yaml
       wget https://raw.githubusercontent.com/canonical/opentelemetry-collector-rock/refs/heads/main/0.152.0/manifest.yaml -O ${CRAFT_PART_BUILD}/snap/manifest.yaml
+      
+      sed -i '/receivers:[[:space:]]*/a \  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.152.0' ${CRAFT_PART_BUILD}/snap/manifest.yaml
+      
       builder --config="${CRAFT_PART_BUILD}/snap/manifest.yaml"
       install -D -m755 ${CRAFT_PART_BUILD}/_build/otelcol ${CRAFT_PART_INSTALL}/bin/otelcol
       install -D ${CRAFT_PART_BUILD}/snap/config.yaml ${CRAFT_PART_INSTALL}/etc/config.yaml

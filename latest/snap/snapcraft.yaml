@@ -9,7 +9,7 @@ description: |
 contact: jose.masson@canonical.com
 issues: https://github.com/canonical/opentelemetry-collector-snap/issues
 source-code: https://github.com/canonical/opentelemetry-collector-snap
-website: https://opentelemetry.io/
+website: https://opentelemetry.io/docs/collector/
 base: core24
 platforms:
   amd64:

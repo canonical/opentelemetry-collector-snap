@@ -1,10 +1,15 @@
+title: OpenTelemetry Collector Snap
 name: opentelemetry-collector
 version: '0.130.0'
 summary: Vendor-agnostic way to receive, process and export telemetry data.
+license: Apache-2.0
 description: |
   Designed to collect, process, and export telemetry data such as metrics, logs,
   and traces from various sources to multiple destinations.
 contact: jose.masson@canonical.com
+issues: https://github.com/canonical/opentelemetry-collector-snap/issues
+source-code: https://github.com/canonical/opentelemetry-collector-snap
+website: https://opentelemetry.io/docs/collector/
 base: core24
 platforms:
   amd64:

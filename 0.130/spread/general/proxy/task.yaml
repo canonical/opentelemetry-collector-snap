@@ -44,6 +44,7 @@ prepare: |
   # Start Prometheus with remote-write receiver enabled
   # stdout/stderr must be redirected so the spread pipe closes when prepare exits
   /tmp/prometheus \
+    --config.file="${PROJECT_PATH}/spread/general/proxy/prometheus_config.yaml" \
     --web.enable-remote-write-receiver \
     --storage.tsdb.path=/tmp/prometheus-data \
     > /tmp/prometheus.log 2>&1 &

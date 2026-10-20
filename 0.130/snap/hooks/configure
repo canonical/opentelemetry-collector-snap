@@ -12,20 +12,38 @@ set_feature_gates() {
   snapctl set feature-gates="$1"
 }
 
+is_valid_proxy_url() {
+    case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+        http://*|https://*|socks5://*|socks5h://*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 handle_feature_gates() {
     feature_gates="$(get_feature_gates)"
     if [ -n "$feature_gates" ]; then
         # Validate
-        otelcol validate --feature-gates="$feature_gates" 2>&1 | grep --ignore-case --quiet "no such feature gate" 
+        otelcol validate --feature-gates="$feature_gates" 2>&1 | grep --ignore-case --quiet "no such feature gate"
         return_code=$?
         # return code 0 means grep found a matching string
         if [ $return_code -eq 0 ] ; then
             echo "\"$feature_gates\" is not a valid feature gate definition" >&2
             return 1
-        fi    
+        fi
     fi
     set_feature_gates "$feature_gates"
-    snapctl restart opentelemetry-collector.opentelemetry-collector
 }
 
-handle_feature_gates
+handle_proxy() {
+    for option in http-proxy https-proxy; do
+        value="$(snapctl get "$option")"
+        if [ -n "$value" ] && ! is_valid_proxy_url "$value"; then
+            # snapd discards the configuration change when this hook fails, so the
+            # previously configured value is left in place
+            echo "\"$value\" is not a valid proxy URL for \"$option\": expected an http://, https://, socks5:// or socks5h:// scheme" >&2
+            return 1
+        fi
+    done
+}
+
+handle_feature_gates && handle_proxy && snapctl restart opentelemetry-collector.opentelemetry-collector

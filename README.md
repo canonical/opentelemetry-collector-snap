@@ -59,3 +59,14 @@ To explicitly disable a feature gate, prefix the gate name with a `-` symbol:
 
 Reference the prometheus/node_exporter README.md for the list of collectors enabled by default.
 
+
+## Proxy configuration
+
+The collector can be configured to route its outbound HTTP(S) requests through a proxy using the `https-proxy`, `http-proxy` and `no-proxy` snap options. Set all the options you need with a single `snap set`, so the collector is restarted only once:
+
+> sudo snap set opentelemetry-collector https-proxy="http://myproxy:3128" http-proxy="http://myproxy:3128" no-proxy="localhost,127.0.0.1,.example.com"
+
+Both the uppercase (`HTTPS_PROXY`) and lowercase (`https_proxy`) forms of the standard environment variables are exported for the collector process. Proxy URLs must use the `http://`, `https://`, `socks5://` or `socks5h://` scheme (case-insensitive); invalid values are rejected, and the previous proxy settings are left in place. To stop routing traffic through a proxy:
+
+> sudo snap unset opentelemetry-collector https-proxy http-proxy no-proxy
+

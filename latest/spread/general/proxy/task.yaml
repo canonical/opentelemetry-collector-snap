@@ -1,0 +1,148 @@
+summary: Verify the OpenTelemetry Collector routes its export traffic through a proxy
+
+environment:
+  OTEL_CONFIG_DIR: /etc/otelcol/config.d
+  PROMETHEUS_VERSION: "3.2.0"
+  PROXY_PORT: "3128"
+  ENDPOINT: "localhost:9090/api/v1/query"
+  MAX_RETRIES: "24"
+  INTERVAL: "5"
+
+prepare: |
+  snap install node-exporter --classic --edge
+
+  # Download and extract Prometheus
+  curl -L -O --create-dirs --output-dir /tmp \
+    "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz"
+  tar -zxf "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz" -C /tmp
+  mv "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/prometheus
+
+  # Install tinyproxy as the HTTP proxy the collector will send its requests through.
+  # tinyproxy defaults to port 8888, which the collector reserves for its own
+  # telemetry endpoint, so move it to PROXY_PORT.
+  apt-get update -qq
+  apt-get install -y tinyproxy
+  sed -i "s/^#\?Port .*/Port ${PROXY_PORT}/" /etc/tinyproxy/tinyproxy.conf
+  grep -q "^Port ${PROXY_PORT}$" /etc/tinyproxy/tinyproxy.conf
+  # the log assertions below depend on request lines being logged
+  sed -i "s/^#\?LogLevel .*/LogLevel Info/" /etc/tinyproxy/tinyproxy.conf
+  grep -q "^LogLevel Info$" /etc/tinyproxy/tinyproxy.conf
+  systemctl restart tinyproxy
+
+  # Install and configure the snap
+  snap install "${CRAFT_ARTIFACT}" --dangerous
+  snap connect opentelemetry-collector:etc-otelcol-config
+
+  # Deploy a collector config whose remote-write endpoint is a non-loopback
+  # address, so requests to it are routed through the proxy
+  HOST_IP="$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)"
+  test -n "${HOST_IP}"
+  mkdir -p "${OTEL_CONFIG_DIR}"
+  sed "s#HOST:9090#${HOST_IP}:9090#" \
+    "${PROJECT_PATH}/spread/general/proxy/otel_config.yaml" > "${OTEL_CONFIG_DIR}/config-01.yaml"
+
+  # Start Prometheus with remote-write receiver enabled
+  # stdout/stderr must be redirected so the spread pipe closes when prepare exits
+  /tmp/prometheus \
+    --web.enable-remote-write-receiver \
+    --storage.tsdb.path=/tmp/prometheus-data \
+    > /tmp/prometheus.log 2>&1 &
+
+  # Route the collector's outbound HTTP traffic through the proxy
+  snap set opentelemetry-collector \
+    https-proxy="http://127.0.0.1:${PROXY_PORT}" \
+    http-proxy="http://127.0.0.1:${PROXY_PORT}" \
+    no-proxy="localhost,127.0.0.1"
+  test "$(snap get opentelemetry-collector https-proxy)" = "http://127.0.0.1:${PROXY_PORT}"
+
+  snap restart opentelemetry-collector
+
+execute: |
+  otelcol_pid() {
+    pgrep -o -f "/snap/opentelemetry-collector/.*/bin/otelcol"
+  }
+  otelcol_environ() {
+    tr '\0' '\n' < "/proc/$(otelcol_pid)/environ"
+  }
+
+  QUERY='query=count({__name__="node_cpu_seconds_total"})'
+  COUNT=0
+
+  while [ "$COUNT" -lt "$MAX_RETRIES" ]; do
+    json_data=$(curl -s --data-urlencode "${QUERY}" "${ENDPOINT}")
+    value=$(echo "$json_data" | jq -r '.data.result[0].value[1]')
+
+    if [ "$value" -gt 0 ] 2>/dev/null; then
+      echo "✅ Metrics pushed to Prometheus!"
+      break
+    fi
+    echo "[${COUNT}] Waiting for metrics to be pushed..."
+    COUNT=$((COUNT + 1))
+    sleep "$INTERVAL"
+  done
+
+  if [ "$COUNT" -ge "$MAX_RETRIES" ]; then
+    echo "❌ Metrics were not pushed to Prometheus."
+    exit 1
+  fi
+
+  # The remote-write requests must have gone through the proxy, not directly
+  HOST_IP="$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)"
+  if ! grep -qF "${HOST_IP}" /var/log/tinyproxy/tinyproxy.log; then
+    echo "❌ No remote-write request went through the proxy."
+    exit 1
+  fi
+  echo "✅ Remote-write requests went through the proxy."
+
+  # The collector process must carry the proxy environment, in both upper and lower case
+  ENVIRON="$(otelcol_environ)"
+  echo "${ENVIRON}" | grep -q "^HTTPS_PROXY=http://127.0.0.1:${PROXY_PORT}$"
+  echo "${ENVIRON}" | grep -q "^https_proxy=http://127.0.0.1:${PROXY_PORT}$"
+  echo "${ENVIRON}" | grep -q "^HTTP_PROXY=http://127.0.0.1:${PROXY_PORT}$"
+  echo "${ENVIRON}" | grep -q "^NO_PROXY=localhost,127.0.0.1$"
+  echo "✅ The collector process carries the proxy environment."
+
+  # Invalid proxy URLs must be rejected by the configure hook
+  if snap set opentelemetry-collector https-proxy="not-a-valid-url"; then
+    echo "❌ snap set accepted an invalid proxy URL."
+    exit 1
+  fi
+  # The rejected change must have been discarded: the previously configured value
+  # is still in place
+  test "$(snap get opentelemetry-collector https-proxy)" = "http://127.0.0.1:${PROXY_PORT}"
+  echo "✅ Invalid proxy URLs are rejected, and the previous value is kept."
+
+  # Clearing the proxy options restarts the collector without the proxy
+  # environment (the path the charm takes when the model proxy is removed)
+  OLD_PID="$(otelcol_pid)"
+  test -n "${OLD_PID}"
+  snap unset opentelemetry-collector https-proxy http-proxy no-proxy
+  COUNT=0
+  while [ "$(otelcol_pid)" = "${OLD_PID}" ] && [ "$COUNT" -lt "$MAX_RETRIES" ]; do
+    echo "[${COUNT}] Waiting for the collector to restart..."
+    COUNT=$((COUNT + 1))
+    sleep "$INTERVAL"
+  done
+  if [ "$(otelcol_pid)" = "${OLD_PID}" ]; then
+    echo "❌ The collector did not restart after snap unset."
+    exit 1
+  fi
+  ! otelcol_environ | grep -qE "^(HTTPS_PROXY|https_proxy|HTTP_PROXY|http_proxy|NO_PROXY|no_proxy)="
+  echo "✅ Clearing the proxy options removed the proxy environment."
+
+restore: |
+  snap remove opentelemetry-collector --purge || true
+  snap remove node-exporter || true
+  systemctl stop tinyproxy || true
+  apt-get purge -y tinyproxy || true
+  rm -rf "${OTEL_CONFIG_DIR}" /tmp/prometheus /tmp/prometheus-data /var/log/tinyproxy || true
+  # Stop Prometheus
+  pkill -f "/tmp/prometheus" || true
+
+debug: |
+  snap logs opentelemetry-collector -n 50 || true
+  cat /tmp/prometheus.log || true
+  cat /var/log/tinyproxy/tinyproxy.log || true
+  tr '\0' '\n' < "/proc/$(pgrep -o -f '/snap/opentelemetry-collector/.*/bin/otelcol')/environ" 2>/dev/null || true
+  journalctl -u tinyproxy --no-pager | tail -20 || true
+  journalctl -xe --no-pager | tail -50 || true

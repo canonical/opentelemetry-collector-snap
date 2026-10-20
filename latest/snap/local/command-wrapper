@@ -4,10 +4,40 @@ log() {
   echo "$1" | systemd-cat
 }
 
+redact() {
+  # Hide credentials embedded in a proxy URL before logging it
+  echo "$1" | sed -E 's#(://)[^/@]*@#\1***@#'
+}
+
+setup_proxy() {
+  # Export the proxy settings from the snap configuration, in both upper and lower
+  # case, as the collector's HTTP clients honor either form.
+  HTTPS_PROXY_VALUE="$(snapctl get https-proxy)"
+  if [ -n "$HTTPS_PROXY_VALUE" ]; then
+    log "setting HTTPS_PROXY to $(redact "$HTTPS_PROXY_VALUE")"
+    export HTTPS_PROXY="$HTTPS_PROXY_VALUE"
+    export https_proxy="$HTTPS_PROXY_VALUE"
+  fi
+
+  HTTP_PROXY_VALUE="$(snapctl get http-proxy)"
+  if [ -n "$HTTP_PROXY_VALUE" ]; then
+    log "setting HTTP_PROXY to $(redact "$HTTP_PROXY_VALUE")"
+    export HTTP_PROXY="$HTTP_PROXY_VALUE"
+    export http_proxy="$HTTP_PROXY_VALUE"
+  fi
+
+  NO_PROXY_VALUE="$(snapctl get no-proxy)"
+  if [ -n "$NO_PROXY_VALUE" ]; then
+    log "setting NO_PROXY to $NO_PROXY_VALUE"
+    export NO_PROXY="$NO_PROXY_VALUE"
+    export no_proxy="$NO_PROXY_VALUE"
+  fi
+}
+
 launch_strict() {
   DEFAULT_CONFIG_FILE="$SNAP/etc/config.yaml"
   CONFIG_FOLDER="/etc/otelcol/config.d"
-   
+
   # we parse/enable the feature gates regardless of which config we're loading
   FEATURE_GATES_VALUE="$(snapctl get feature-gates)"
   if [ -z "$FEATURE_GATES_VALUE" ]
@@ -18,6 +48,8 @@ launch_strict() {
     log "enabling feature gates: $FEATURE_GATES_VALUE"
     FEATURE_GATES_ARG="--feature-gates=${FEATURE_GATES_VALUE}"
   fi
+  # export the proxy settings regardless of which config we're loading
+  setup_proxy
   
   # If the snap can access $CONFIG_FOLDER and there is at least one file inside
   if snapctl is-connected etc-otelcol-config; then

@@ -63,7 +63,12 @@ execute: |
     pgrep -o -f "/snap/opentelemetry-collector/.*/bin/otelcol"
   }
   otelcol_environ() {
-    tr '\0' '\n' < "/proc/$(otelcol_pid)/environ"
+    pid="$(otelcol_pid)"
+    if [ -z "$pid" ]; then
+      echo "otelcol is not running" >&2
+      return 1
+    fi
+    tr '\0' '\n' < "/proc/$pid/environ"
   }
 
   QUERY='query=count({__name__="node_cpu_seconds_total"})'
@@ -96,7 +101,10 @@ execute: |
   echo "✅ Remote-write requests went through the proxy."
 
   # The collector process must carry the proxy environment, in both upper and lower case
-  ENVIRON="$(otelcol_environ)"
+  ENVIRON="$(otelcol_environ)" || {
+    echo "❌ Could not read the environment of the collector."
+    exit 1
+  }
   echo "${ENVIRON}" | grep -q "^HTTPS_PROXY=http://127.0.0.1:${PROXY_PORT}$"
   echo "${ENVIRON}" | grep -q "^https_proxy=http://127.0.0.1:${PROXY_PORT}$"
   echo "${ENVIRON}" | grep -q "^HTTP_PROXY=http://127.0.0.1:${PROXY_PORT}$"
@@ -104,13 +112,15 @@ execute: |
   echo "✅ The collector process carries the proxy environment."
 
   # Invalid proxy URLs must be rejected by the configure hook
-  if snap set opentelemetry-collector https-proxy="not-a-valid-url"; then
-    echo "❌ snap set accepted an invalid proxy URL."
-    exit 1
-  fi
-  # The rejected change must have been discarded: the previously configured value
-  # is still in place
-  test "$(snap get opentelemetry-collector https-proxy)" = "http://127.0.0.1:${PROXY_PORT}"
+  for bad in "not-a-valid-url" "http://" "http://proxy:badport" "http://proxy:0" "http://proxy:99999" "http://proxy:3128/path" "ftp://proxy:21"; do
+    if snap set opentelemetry-collector "https-proxy=$bad"; then
+      echo "❌ snap set accepted an invalid proxy URL: $bad"
+      exit 1
+    fi
+    # The rejected change must have been discarded: the previously configured value
+    # is still in place
+    test "$(snap get opentelemetry-collector https-proxy)" = "http://127.0.0.1:${PROXY_PORT}"
+  done
   echo "✅ Invalid proxy URLs are rejected, and the previous value is kept."
 
   # Clearing the proxy options restarts the collector without the proxy
@@ -118,17 +128,29 @@ execute: |
   OLD_PID="$(otelcol_pid)"
   test -n "${OLD_PID}"
   snap unset opentelemetry-collector https-proxy http-proxy no-proxy
+  NEW_PID=""
   COUNT=0
-  while [ "$(otelcol_pid)" = "${OLD_PID}" ] && [ "$COUNT" -lt "$MAX_RETRIES" ]; do
+  while [ "$COUNT" -lt "$MAX_RETRIES" ]; do
+    NEW_PID="$(otelcol_pid)"
+    if [ -n "${NEW_PID}" ] && [ "${NEW_PID}" != "${OLD_PID}" ]; then
+      break
+    fi
     echo "[${COUNT}] Waiting for the collector to restart..."
     COUNT=$((COUNT + 1))
     sleep "$INTERVAL"
   done
-  if [ "$(otelcol_pid)" = "${OLD_PID}" ]; then
+  if [ -z "${NEW_PID}" ] || [ "${NEW_PID}" = "${OLD_PID}" ]; then
     echo "❌ The collector did not restart after snap unset."
     exit 1
   fi
-  ! otelcol_environ | grep -qE "^(HTTPS_PROXY|https_proxy|HTTP_PROXY|http_proxy|NO_PROXY|no_proxy)="
+  ENVIRON="$(otelcol_environ)" || {
+    echo "❌ Could not read the environment of the restarted collector."
+    exit 1
+  }
+  if echo "${ENVIRON}" | grep -qE "^(HTTPS_PROXY|https_proxy|HTTP_PROXY|http_proxy|NO_PROXY|no_proxy)="; then
+    echo "❌ The collector still carries proxy environment variables after snap unset."
+    exit 1
+  fi
   echo "✅ Clearing the proxy options removed the proxy environment."
 
 restore: |

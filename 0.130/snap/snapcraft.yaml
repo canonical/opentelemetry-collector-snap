@@ -45,6 +45,7 @@ apps:
     install-mode: disable
     restart-condition: on-failure
     plugs:
+      - network
       - network-bind
       - time-control
       - hardware-observe

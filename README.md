@@ -66,7 +66,7 @@ The collector can be configured to route its outbound HTTP(S) requests through a
 
 > sudo snap set opentelemetry-collector https-proxy="http://myproxy:3128" http-proxy="http://myproxy:3128" no-proxy="localhost,127.0.0.1,.example.com"
 
-Both the uppercase (`HTTPS_PROXY`) and lowercase (`https_proxy`) forms of the standard environment variables are exported for the collector process. Proxy URLs must use the `http://`, `https://`, `socks5://` or `socks5h://` scheme (case-insensitive); invalid values are rejected, and the previous proxy settings are left in place. To stop routing traffic through a proxy:
+Both the uppercase (`HTTPS_PROXY`) and lowercase (`https_proxy`) forms of the standard environment variables are exported for the collector process. Proxy URLs must be of the form `scheme://[user[:pass]@]host[:port][/]` (case-insensitive scheme), where the scheme is `http`, `https`, `socks5` or `socks5h`, and `host` is a hostname, an IP address, or a bracketed IPv6 address like `[::1]`. The port, when present, must be between 1 and 65535. Invalid values are rejected, and the previous proxy settings are left in place. To stop routing traffic through a proxy:
 
 > sudo snap unset opentelemetry-collector https-proxy http-proxy no-proxy
 

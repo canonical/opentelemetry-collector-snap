@@ -13,10 +13,12 @@ set_feature_gates() {
 }
 
 is_valid_proxy_url() {
-    case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
-        http://*|https://*|socks5://*|socks5h://*) return 0 ;;
-        *) return 1 ;;
-    esac
+    url="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+    # scheme://[user[:pass]@]host[:port][/], where host is a hostname, an IPv4
+    # address or a bracketed IPv6 address
+    printf '%s\n' "$url" | grep -qE '^(https?|socks5h?)://([^/]*@)?([a-z0-9.-]+|\[[0-9a-f:.]+\])(:[0-9]{1,5})?/?$' || return 1
+    port="$(printf '%s\n' "$url" | sed -nE 's#^[a-z0-9]+://([^/]*@)?([a-z0-9.-]+|\[[0-9a-f:.]+\]):([0-9]+)/?$#\3#p')"
+    [ -z "$port" ] || { [ "$port" -ge 1 ] && [ "$port" -le 65535 ]; }
 }
 
 handle_feature_gates() {
@@ -40,7 +42,7 @@ handle_proxy() {
         if [ -n "$value" ] && ! is_valid_proxy_url "$value"; then
             # snapd discards the configuration change when this hook fails, so the
             # previously configured value is left in place
-            echo "\"$value\" is not a valid proxy URL for \"$option\": expected an http://, https://, socks5:// or socks5h:// scheme" >&2
+            echo "\"$value\" is not a valid proxy URL for \"$option\": expected scheme://[user[:pass]@]host[:port][/], with an http://, https://, socks5:// or socks5h:// scheme" >&2
             return 1
         fi
     done

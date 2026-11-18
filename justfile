@@ -56,7 +56,8 @@ update source_repo:
 
   full_version="$full_version" yq -i '.version = strenv(full_version)' "$snapcraft_file"
   full_version="$full_version" yq -i '.parts.ocb["source-tag"] = "v" + strenv(full_version)' "$snapcraft_file"
-  sed -i "s|/$old_full_version/|/$full_version/|g" "$snapcraft_file"
+  # refresh the version pins in the vendored OCB manifest and the journaldreceiver add-on
+  sed -i "s|$old_full_version|$full_version|g" "$snapcraft_file" latest/snap/manifest.yaml
   updated_folders="latest"
   echo "✓ Updated latest/ to $full_version"
 

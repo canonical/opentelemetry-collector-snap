@@ -88,17 +88,14 @@ parts:
     plugin: dump
     source: .
     build-packages:
-      - wget
       - libsystemd-dev
       - build-essential
       - pkg-config
     override-build: |
-      mkdir -p ${CRAFT_PART_BUILD}/snap
-      wget https://raw.githubusercontent.com/canonical/opentelemetry-collector-rock/refs/heads/main/0.152.0/config.yaml -O ${CRAFT_PART_BUILD}/snap/config.yaml
-      wget https://raw.githubusercontent.com/canonical/opentelemetry-collector-rock/refs/heads/main/0.152.0/manifest.yaml -O ${CRAFT_PART_BUILD}/snap/manifest.yaml
-      
+      # config.yaml and manifest.yaml are vendored in snap/ because the opentelemetry-collector-rock
+      # repo restructured main to major.minor dirs and no longer exposes a per-version path for latest
       sed -i '/receivers:[[:space:]]*/a \  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.152.0' ${CRAFT_PART_BUILD}/snap/manifest.yaml
-      
+
       builder --config="${CRAFT_PART_BUILD}/snap/manifest.yaml"
       install -D -m755 ${CRAFT_PART_BUILD}/_build/otelcol ${CRAFT_PART_INSTALL}/bin/otelcol
       install -D ${CRAFT_PART_BUILD}/snap/config.yaml ${CRAFT_PART_INSTALL}/etc/config.yaml

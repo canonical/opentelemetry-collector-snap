@@ -131,7 +131,7 @@ execute: |
   NEW_PID=""
   COUNT=0
   while [ "$COUNT" -lt "$MAX_RETRIES" ]; do
-    NEW_PID="$(otelcol_pid)"
+    NEW_PID="$(otelcol_pid || true)"
     if [ -n "${NEW_PID}" ] && [ "${NEW_PID}" != "${OLD_PID}" ]; then
       break
     fi
